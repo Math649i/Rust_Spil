@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-use crate::resources::{GameState, Score};
-use crate::components::{Player, Obstacle};
+use crate::resources::{GameState, Score, CurrentSkin};
+use crate::components::{Player, Obstacle, MainCamera};
 use crate::systems::setup::setup;
 
 pub fn restart_game(
@@ -14,6 +14,8 @@ pub fn restart_game(
     text_entities: Query<Entity, With<Text>>,
     player_query: Query<Entity, With<Player>>,
     obstacle_query: Query<Entity, With<Obstacle>>,
+    camera_query: Query<Entity, With<MainCamera>>, // ✅ Added
+    skin: Res<CurrentSkin>,
 ) {
     if keyboard_input.just_pressed(KeyCode::R) {
         println!("🔄 Restarting Game...");
@@ -21,6 +23,7 @@ pub fn restart_game(
         *game_state = GameState::Running;
         score.0 = 0.0;
 
+        // ✅ Despawn all relevant entities
         for entity in text_entities.iter() {
             commands.entity(entity).despawn();
         }
@@ -30,7 +33,11 @@ pub fn restart_game(
         for entity in obstacle_query.iter() {
             commands.entity(entity).despawn();
         }
+        for entity in camera_query.iter() {
+            commands.entity(entity).despawn();
+        }
 
-        setup(commands, asset_server, windows);
+        // ✅ Respawn everything
+        setup(commands, asset_server, windows, skin);
     }
 }

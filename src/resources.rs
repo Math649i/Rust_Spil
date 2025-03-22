@@ -11,3 +11,13 @@ pub enum GameState {
 
 #[derive(Resource)]
 pub struct Score(pub f32, pub f32);
+
+#[derive(Resource)]
+pub struct CoinWallet {
+    pub coins: u32,
+}
+
+#[derive(Resource)]
+pub struct CurrentSkin {
+    pub color: Color,
+}

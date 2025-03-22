@@ -9,3 +9,9 @@ pub struct Player {
 
 #[derive(Component)]
 pub struct Obstacle;
+
+#[derive(Component)]
+pub struct Coin;
+
+#[derive(Component)]
+pub struct MainCamera; // ✅ Used to track and despawn the camera on restart

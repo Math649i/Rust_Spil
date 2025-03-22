@@ -1,13 +1,19 @@
 use bevy::prelude::*;
-use crate::constants::{GROUND_Y};
-use crate::components::Player;
+use crate::constants::GROUND_Y;
+use crate::components::{Player, MainCamera};
+use crate::resources::CurrentSkin;
 
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     windows: Query<&Window>,
+    skin: Res<CurrentSkin>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    // ✅ Spawn the camera and tag it
+    commands.spawn((
+        Camera2dBundle::default(),
+        MainCamera,
+    ));
 
     let window = windows.single();
     let window_width = window.width();
@@ -25,9 +31,15 @@ pub fn setup(
     });
 
     let player_texture = asset_server.load("player.png");
+    let skin_color = skin.color;
+
     commands.spawn((
         SpriteBundle {
             texture: player_texture,
+            sprite: Sprite {
+                color: skin_color,
+                ..default()
+            },
             transform: Transform::from_xyz(-200.0, GROUND_Y, 0.0),
             ..default()
         },
