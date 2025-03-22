@@ -348,7 +348,7 @@ fn restart_game(
     }
 }
 
-1
+
 fn game_logic(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
