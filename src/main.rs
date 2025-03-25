@@ -1,7 +1,7 @@
 mod constants;
 mod components;
 mod resources;
-
+mod serial; // 👈 tilføj
 mod systems {
     pub mod collision;
     pub mod obstacles;
@@ -15,6 +15,7 @@ mod systems {
 
 use bevy::prelude::*;
 use resources::{GameState, Score, SpawnTimer, CoinWallet, CurrentSkin};
+use serial::{JumpSignal, setup_serial_listener}; // 👈 tilføj
 use systems::{
     collision::check_collisions,
     obstacles::{spawn_obstacles, move_obstacles},
@@ -36,8 +37,9 @@ fn main() {
         .insert_resource(CoinSpawnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
         .insert_resource(CoinWallet { coins: 0 })
         .insert_resource(CurrentSkin { color: Color::WHITE })
+        .insert_resource(JumpSignal::default()) // 👈
         // === Startup ===
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, setup_serial_listener)) // 👈
         // === Main Game Update ===
         .add_systems(Update, (
             update_score,
