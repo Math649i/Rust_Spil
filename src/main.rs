@@ -1,6 +1,8 @@
+// src/main.rs
 use bevy::prelude::*;
 use bevy::window::close_on_esc;
 use bevy::ecs::schedule::common_conditions::in_state;
+use bevy_egui::EguiPlugin;
 
 mod constants;
 mod components;
@@ -25,12 +27,13 @@ use systems::collision::check_collisions;
 use systems::score::update_score;
 use systems::restart::restart_game;
 use systems::coin::{spawn_coins, move_coins, collect_coins, CoinSpawnTimer};
-use systems::shop::open_shop;
+use systems::shop::{shop_ui, handle_buy_button};
 use systems::menu::{spawn_main_menu, handle_play_button};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(EguiPlugin)
         .init_resource::<SpawnTimer>()
         .init_resource::<Score>()
         .init_resource::<CoinWallet>()
@@ -54,16 +57,9 @@ fn main() {
             )
                 .run_if(in_state(GameState::Running)),
         )
-        .add_systems(
-            Update,
-            restart_game.run_if(in_state(GameState::GameOver)),
-        )
-        .add_systems(
-            Update,
-            open_shop.run_if(
-                in_state(GameState::Running).or_else(in_state(GameState::GameOver)),
-            ),
-        )
+        .add_systems(Update, restart_game.run_if(in_state(GameState::GameOver)))
+        .add_systems(OnEnter(GameState::GameOver), shop_ui) // ✅ Show shop on death
+        .add_systems(Update, handle_buy_button.run_if(in_state(GameState::GameOver))) // ✅ Allow clicking while dead
         .add_systems(Update, close_on_esc)
         .run();
 }
