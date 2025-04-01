@@ -2,28 +2,20 @@ use bevy::prelude::*;
 use crate::components::Player;
 use crate::constants::{GRAVITY, JUMP_VELOCITY, GROUND_Y, CEILING_Y};
 use crate::resources::Score;
-use crate::serial::JumpSignal;
 
 pub fn player_movement(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
     mut query: Query<(&mut Transform, &mut Player)>,
     score: Res<Score>,
-    signal: Res<JumpSignal>,
 ) {
     if let Ok((mut transform, mut player)) = query.get_single_mut() {
         let delta_time = time.delta_seconds();
 
-        let mut should_jump = keyboard_input.just_pressed(KeyCode::Space);
-
-        if let Ok(mut jump) = signal.0.lock() {
-            if *jump {
-                should_jump = true;
-                *jump = false; // reset signal
-            }
-        }
+        let should_jump = keyboard_input.just_pressed(KeyCode::Space);
 
         if score.0 < 100.0 {
+            // Standard gravity jump
             if should_jump && player.on_ground {
                 player.velocity = JUMP_VELOCITY;
                 player.on_ground = false;
@@ -37,6 +29,7 @@ pub fn player_movement(
                 player.on_ground = true;
             }
         } else {
+            // Ceiling flipping jump
             player.velocity = 0.0;
             if should_jump {
                 player.flipped = !player.flipped;

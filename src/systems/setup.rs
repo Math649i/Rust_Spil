@@ -8,7 +8,13 @@ pub fn setup(
     asset_server: Res<AssetServer>,
     windows: Query<&Window>,
     skin: Res<CurrentSkin>,
+    camera_query: Query<Entity, With<Camera>>,
 ) {
+    // ✅ Despawn any existing cameras before spawning a new one
+    for cam_entity in camera_query.iter() {
+        commands.entity(cam_entity).despawn();
+    }
+
     // ✅ Spawn the camera and tag it
     commands.spawn((
         Camera2dBundle::default(),

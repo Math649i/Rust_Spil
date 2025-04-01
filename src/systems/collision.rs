@@ -1,21 +1,18 @@
 use bevy::prelude::*;
+use bevy::ecs::schedule::NextState;
 
 use crate::components::{Player, Obstacle};
-use crate::resources::{GameState, Score};
+use crate::resources::{Score, GameState};
 use crate::constants::{PLAYER_SIZE, OBSTACLE_SIZE};
 
 pub fn check_collisions(
     mut commands: Commands,
-    mut game_state: ResMut<GameState>,
+    mut next_state: ResMut<NextState<GameState>>,
     score: ResMut<Score>,
     player_query: Query<(&Transform, &Player), With<Player>>,
     obstacle_query: Query<(Entity, &Transform), With<Obstacle>>,
     asset_server: Res<AssetServer>,
 ) {
-    if *game_state == GameState::GameOver {
-        return;
-    }
-
     if let Ok((player_transform, _)) = player_query.get_single() {
         for (_, obstacle_transform) in obstacle_query.iter() {
             let collision = player_transform.translation.x < obstacle_transform.translation.x + OBSTACLE_SIZE.x
@@ -25,7 +22,7 @@ pub fn check_collisions(
 
             if collision {
                 println!("💥 Game Over! Final Score: {:.0}", score.0);
-                *game_state = GameState::GameOver;
+                next_state.set(GameState::GameOver);
 
                 for (obstacle_entity, _) in obstacle_query.iter() {
                     commands.entity(obstacle_entity).despawn();

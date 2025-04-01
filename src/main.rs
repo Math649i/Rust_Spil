@@ -1,57 +1,69 @@
+use bevy::prelude::*;
+use bevy::window::close_on_esc;
+use bevy::ecs::schedule::common_conditions::in_state;
+
 mod constants;
 mod components;
 mod resources;
-mod serial; // 👈 tilføj
 mod systems {
-    pub mod collision;
-    pub mod obstacles;
-    pub mod player;
-    pub mod restart;
-    pub mod score;
     pub mod setup;
+    pub mod obstacles;
+    pub mod collision;
+    pub mod score;
+    pub mod restart;
     pub mod coin;
     pub mod shop;
+    pub mod menu;
+    pub mod movement;
 }
 
-use bevy::prelude::*;
-use resources::{GameState, Score, SpawnTimer, CoinWallet, CurrentSkin};
-use serial::{JumpSignal, setup_serial_listener}; // 👈 tilføj
-use systems::{
-    collision::check_collisions,
-    obstacles::{spawn_obstacles, move_obstacles},
-    player::player_movement,
-    restart::restart_game,
-    score::update_score,
-    setup::setup,
-    coin::{spawn_coins, collect_coins, move_coins, CoinSpawnTimer},
-    shop::open_shop,
-};
+use resources::*;
+use systems::setup::setup;
+use systems::movement::player_movement;
+use systems::obstacles::{spawn_obstacles, move_obstacles};
+use systems::collision::check_collisions;
+use systems::score::update_score;
+use systems::restart::restart_game;
+use systems::coin::{spawn_coins, move_coins, collect_coins, CoinSpawnTimer};
+use systems::shop::open_shop;
+use systems::menu::{spawn_main_menu, handle_play_button};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        // === Resources ===
-        .insert_resource(GameState::Running)
-        .insert_resource(Score(0.0, 1.0))
-        .insert_resource(SpawnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
-        .insert_resource(CoinSpawnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
-        .insert_resource(CoinWallet { coins: 0 })
+        .init_resource::<SpawnTimer>()
+        .init_resource::<Score>()
+        .init_resource::<CoinWallet>()
         .insert_resource(CurrentSkin { color: Color::WHITE })
-        .insert_resource(JumpSignal::default()) // 👈
-        // === Startup ===
-        .add_systems(Startup, (setup, setup_serial_listener)) // 👈
-        // === Main Game Update ===
-        .add_systems(Update, (
-            update_score,
-            restart_game,
-            open_shop,
-            player_movement.run_if(|state: Res<GameState>| *state == GameState::Running),
-            spawn_obstacles.run_if(|state: Res<GameState>| *state == GameState::Running),
-            move_obstacles.run_if(|state: Res<GameState>| *state == GameState::Running),
-            check_collisions,
-            spawn_coins.run_if(|state: Res<GameState>| *state == GameState::Running),
-            move_coins.run_if(|state: Res<GameState>| *state == GameState::Running),
-            collect_coins.run_if(|state: Res<GameState>| *state == GameState::Running),
-        ))
+        .insert_resource(CoinSpawnTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
+        .add_state::<GameState>()
+        .add_systems(Startup, spawn_main_menu)
+        .add_systems(Update, handle_play_button.run_if(in_state(GameState::Menu)))
+        .add_systems(OnEnter(GameState::Running), setup)
+        .add_systems(
+            Update,
+            (
+                player_movement,
+                spawn_obstacles,
+                move_obstacles,
+                check_collisions,
+                update_score,
+                spawn_coins,
+                move_coins,
+                collect_coins,
+            )
+                .run_if(in_state(GameState::Running)),
+        )
+        .add_systems(
+            Update,
+            restart_game.run_if(in_state(GameState::GameOver)),
+        )
+        .add_systems(
+            Update,
+            open_shop.run_if(
+                in_state(GameState::Running).or_else(in_state(GameState::GameOver)),
+            ),
+        )
+        .add_systems(Update, close_on_esc)
         .run();
 }

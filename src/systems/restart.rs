@@ -1,29 +1,24 @@
 use bevy::prelude::*;
+use bevy::ecs::schedule::NextState;
 
-use crate::resources::{GameState, Score, CurrentSkin};
+use crate::resources::{Score, CurrentSkin, GameState};
 use crate::components::{Player, Obstacle, MainCamera};
 use crate::systems::setup::setup;
 
 pub fn restart_game(
     keyboard_input: Res<Input<KeyCode>>,
-    mut game_state: ResMut<GameState>,
+    mut next_state: ResMut<NextState<GameState>>,
     mut score: ResMut<Score>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    windows: Query<&Window>,
     text_entities: Query<Entity, With<Text>>,
     player_query: Query<Entity, With<Player>>,
     obstacle_query: Query<Entity, With<Obstacle>>,
-    camera_query: Query<Entity, With<MainCamera>>, // ✅ Added
-    skin: Res<CurrentSkin>,
+    camera_query: Query<Entity, With<Camera>>,
 ) {
     if keyboard_input.just_pressed(KeyCode::R) {
         println!("🔄 Restarting Game...");
 
-        *game_state = GameState::Running;
-        score.0 = 0.0;
-
-        // ✅ Despawn all relevant entities
+        // Despawn entities
         for entity in text_entities.iter() {
             commands.entity(entity).despawn();
         }
@@ -37,7 +32,12 @@ pub fn restart_game(
             commands.entity(entity).despawn();
         }
 
-        // ✅ Respawn everything
-        setup(commands, asset_server, windows, skin);
+        // Reset score
+        score.0 = 0.0;
+
+        // Force state transition by first going to Menu (or any dummy state), then to Running
+        next_state.set(GameState::Menu); // triggers next frame
+        next_state.set(GameState::Running); // triggers OnEnter(Running)
     }
 }
+

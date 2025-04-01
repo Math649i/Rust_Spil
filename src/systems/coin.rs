@@ -1,3 +1,4 @@
+// ✅ FILE: src/systems/coin.rs
 use bevy::prelude::*;
 use rand::Rng;
 
@@ -36,7 +37,7 @@ pub fn spawn_coins(
             texture,
             transform: Transform::from_xyz(x, y, 0.0),
             sprite: Sprite {
-                custom_size: Some(Vec2::splat(60.0)), // ✅ Larger size
+                custom_size: Some(Vec2::splat(60.0)),
                 ..default()
             },
             ..default()
@@ -75,7 +76,7 @@ pub fn collect_coins(
             if distance < 30.0 {
                 wallet.coins += 1;
                 commands.entity(coin_entity).despawn();
-                println!("💰 Coin collected! Total: {}", wallet.coins);
+                println!("\u{1F4B0} Coin collected! Total: {}", wallet.coins);
             }
         }
     }
